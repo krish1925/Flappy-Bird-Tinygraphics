@@ -43,7 +43,7 @@ export class Bird extends Scene {
         this.textures = {
             background: new Texture("assets/Day_bg.png"),
             background_night: new Texture("assets/night_bg.png"),
-            lose: new Texture("assets/lose.jpg"),
+            lose: new Texture("assets/FInalLose.png"),
         }
 
         // *** Materials
