@@ -142,36 +142,13 @@ export class Bird extends Scene {
         this.new_line();
 
         const acceleration_controls = this.control_panel.appendChild(document.createElement("span"));
-        this.key_triggered_button("-", ["g"], () => {
-            if (!this.game_start) {
-                this.acceleration = this.acceleration > 6 ? this.acceleration - 2.0 : 5.8;            
-            }
-        }, undefined, undefined, undefined, acceleration_controls);
-        this.live_string(box => {
-            box.textContent = "Acceleration (Fixed after game start): " + this.acceleration.toFixed(1);
-        }, acceleration_controls);
-        this.key_triggered_button("+", ["h"], () => {
-            if (!this.game_start) {
-                this.acceleration = this.acceleration < 11 ? this.acceleration + 2.0 : 11.8;            
-            }
-        }, undefined, undefined, undefined, acceleration_controls);
+        
+    
         
         this.new_line();
 
         const initial_v_y_controls = this.control_panel.appendChild(document.createElement("span"));
-        this.key_triggered_button("-", ["j"], () => {
-            if (!this.game_start) {
-                this.initial_v_y = this.initial_v_y > 4 ? this.initial_v_y - 1 : 4;            
-            }
-        }, undefined, undefined, undefined, initial_v_y_controls);
-        this.live_string(box => {
-            box.textContent = "Up speed (Fixed after game start): " + this.initial_v_y;
-        }, initial_v_y_controls);
-        this.key_triggered_button("+", ["k"], () => {
-            if (!this.game_start) {
-                this.initial_v_y = this.initial_v_y < 7 ? this.initial_v_y + 1 : 7;            
-            }
-        }, undefined, undefined, undefined, initial_v_y_controls);
+        
       
         this.key_triggered_button("Change theme", ["b"], ()=> {
             this.night_theme = !this.night_theme;
