@@ -181,26 +181,29 @@ export class Bird extends Scene {
     draw_box(context, program_state, model_transform, color) {
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.plastic.override({color: color}));
     }
+    draw_sun(context, program_state, model_transform, color) {
+        this.shapes.sun.draw(context, program_state, model_transform, this.materials.plastic.override({color: color}));
+    }
     raw_cylinder(context, program_state, model_transform, color) {
         //const rotated_transform = model_transform.times(Mat4.rotation( 0, Math.PI / 2, 0,  1));
         this.shapes.capped_cylinder.draw(context, program_state, model_transform, this.materials.plastic.override({color: color}));
     }
 
     draw_wings(context, program_state, model_transform) {
-        const left_wing = model_transform.times(Mat4.translation(-1.15, -0.4, -0.4))
+        const left_wing = model_transform.times(Mat4.translation(-0.8, -0.4, -0.4))
                                          .times(Mat4.scale(0.2, 0.6, 0.8));
-        const right_wing = model_transform.times(Mat4.translation(1.15, -0.4, -0.4))
+        const right_wing = model_transform.times(Mat4.translation(0.8, -0.4, -0.4))
                                           .times(Mat4.scale(0.2, 0.6, 0.8));
-        this.shapes.cube.draw(context, program_state, left_wing, this.materials.plastic.override({color: color(1, 1, 1, 1)}));
-        this.shapes.cube.draw(context, program_state, right_wing, this.materials.plastic.override({color: color(1, 1, 1, 1)}));
+        this.shapes.sun.draw(context, program_state, left_wing, this.materials.plastic.override({color: color(1, 1, 1, 1)}));
+        this.shapes.sun.draw(context, program_state, right_wing, this.materials.plastic.override({color: color(1, 1, 1, 1)}));
     }
 
     draw_mouth(context, program_state, model_transform) {
         const lip_color = hex_color("#FE9800");
         const upper_lip = model_transform.times(Mat4.translation(0, 0, 1))
-                                         .times(Mat4.scale(1.1, 0.2, 1));
-        const lower_lip = model_transform.times(Mat4.translation(0, -0.3, 0.7))
-                                         .times(Mat4.scale(1.05, 0.2, 1));
+                                         .times(Mat4.scale(0.8, 0.2, 0.6));
+        const lower_lip = model_transform.times(Mat4.translation(0, -0.3, 0.5))
+                                         .times(Mat4.scale(0.7, 0.2, 0.8));
         this.shapes.cube.draw(context, program_state, upper_lip, this.materials.plastic.override({color: lip_color}));
         this.shapes.cube.draw(context, program_state, lower_lip, this.materials.plastic.override({color: lip_color}));
     }
@@ -209,25 +212,25 @@ export class Bird extends Scene {
         const white = hex_color("#FFFFFF");
         const black = hex_color("#000000");
         // right eye
-        const right_bg_transform = model_transform.times(Mat4.translation(-0.75, 0.55, 0.7))
-                                                  .times(Mat4.scale(0.1, 0.5, 0.3));
-        const right_pupil_transform = model_transform.times(Mat4.translation(-0.8, 0.6, 0.7))
-                                                     .times(Mat4.scale(0.1, 0.3, 0.15));
-        this.shapes.cube.draw(context, program_state, right_bg_transform, this.materials.plastic.override({color: white}));
-        this.shapes.cube.draw(context, program_state, right_pupil_transform, this.materials.plastic.override({color: black}));
+        const right_bg_transform = model_transform.times(Mat4.translation(-0.75, 0.35, 0.7))
+                                                  .times(Mat4.scale(0.2, 0.4, 0.4));
+        const right_pupil_transform = model_transform.times(Mat4.translation(-0.8, 0.4, 0.8))
+                                                     .times(Mat4.scale(0.2, 0.20, 0.15));
+        this.shapes.sun.draw(context, program_state, right_bg_transform, this.materials.plastic.override({color: white}));
+        this.shapes.sun.draw(context, program_state, right_pupil_transform, this.materials.plastic.override({color: black}));
         // left eye
-        const left_bg_transform = model_transform.times(Mat4.translation(0.75, 0.55, 0.7))
-                                                 .times(Mat4.scale(0.1, 0.5, 0.3));
-        const left_pupil_transform = model_transform.times(Mat4.translation(0.8, 0.6, 0.7))
-                                                    .times(Mat4.scale(0.1, 0.3, 0.15));
-        this.shapes.cube.draw(context, program_state, left_bg_transform, this.materials.plastic.override({color: white}));
-        this.shapes.cube.draw(context, program_state, left_pupil_transform, this.materials.plastic.override({color: black}));
+        const left_bg_transform = model_transform.times(Mat4.translation(0.75, 0.35, 0.7))
+                                                 .times(Mat4.scale(0.2, 0.4, 0.4));
+        const left_pupil_transform = model_transform.times(Mat4.translation(0.8, 0.4, 0.8))
+                                                    .times(Mat4.scale(0.2, 0.2, 0.15));
+        this.shapes.sun.draw(context, program_state, left_bg_transform, this.materials.plastic.override({color: white}));
+        this.shapes.sun.draw(context, program_state, left_pupil_transform, this.materials.plastic.override({color: black}));
     }
 
     draw_bird(context, program_state, model_transform) {
         const body_transform = model_transform.times(Mat4.scale(0.8, 1, 1.2));
         const yellow = hex_color("#F9DC35");
-        this.draw_box(context, program_state, body_transform, yellow);
+        this.draw_sun(context, program_state, body_transform, yellow);
         this.draw_wings(context, program_state, model_transform);
         this.draw_mouth(context, program_state, model_transform);
         this.draw_eye(context, program_state, model_transform);
