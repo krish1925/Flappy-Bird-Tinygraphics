@@ -91,7 +91,7 @@ export class Simulation extends Scene {
     // the simulation from the frame rate (see below).
     constructor() {
         super();
-        Object.assign(this, {time_accumulator: 0, time_scale: 1, t: 0, dt: 1 / 20, bodies: [], steps_taken: 0});
+        Object.assign(this, {time_accumulator: 0, time_scale: 0.001, t: 0, dt: 1 / 60, bodies: [], steps_taken: 0});
     }
 
     simulate(frame_time) {
@@ -244,118 +244,18 @@ export class Inertia_Demo extends Simulation {
     }
 
     show_explanation(document_element) {
-        document_element.innerHTML += `<p>This demo lets random initial momentums carry bodies until they fall and bounce.  It shows a good way to do incremental movements, which are crucial for making objects look like they're moving on their own instead of following a pre-determined path.  Animated objects look more real when they have inertia and obey physical laws, instead of being driven by simple sinusoids or periodic functions.
-                                     </p><p>For each moving object, we need to store a model matrix somewhere that is permanent (such as inside of our class) so we can keep consulting it every frame.  As an example, for a bowling simulation, the ball and each pin would go into an array (including 11 total matrices).  We give the model transform matrix a \"velocity\" and track it over time, which is split up into linear and angular components.  Here the angular velocity is expressed as an Euler angle-axis pair so that we can scale the angular speed how we want it.
-                                     </p><p>The forward Euler method is used to advance the linear and angular velocities of each shape one time-step.  The velocities are not subject to any forces here, but just a downward acceleration.  Velocities are also constrained to not take any objects under the ground plane.
-                                     </p><p>This scene extends class Simulation, which carefully manages stepping simulation time for any scenes that subclass it.  It totally decouples the whole simulation from the frame rate, following the suggestions in the blog post <a href=\"https://gafferongames.com/post/fix_your_timestep/\" target=\"blank\">\"Fix Your Timestep\"</a> by Glenn Fielder.  Buttons allow you to speed up and slow down time to show that the simulation's answers do not change.</p>`;
+        document_element.innerHTML += ``;
     }
 }
 
 
 export class Collision_Demo extends Simulation {
-    // **Collision_Demo** demonstration: Detect when some flying objects
-    // collide with one another, coloring them red.
-    constructor() {
-        super();
-        this.data = new Test_Data();
-        this.shapes = Object.assign({}, this.data.shapes);
-        // Make simpler dummy shapes for representing all other shapes during collisions:
-        this.colliders = [
-            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: .5},
-            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(2), leeway: .3},
-            {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: .1}
-        ];
-        this.collider_selection = 0;
-        // Materials:
-        const phong = new defs.Phong_Shader(1);
-        const bump = new defs.Fake_Bump_Map(1)
-        this.inactive_color = new Material(bump, {
-            color: color(.5, .5, .5, 1), ambient: .2,
-            texture: this.data.textures.rgb
-        });
-        this.active_color = this.inactive_color.override({color: color(.5, 0, 0, 1), ambient: .5});
-        this.bright = new Material(phong, {color: color(0, 1, 0, .5), ambient: 1});
-    }
 
-    make_control_panel() {
-        this.key_triggered_button("Previous collider", ["b"], this.decrease);
-        this.key_triggered_button("Next", ["n"], this.increase);
-        this.new_line();
-        super.make_control_panel();
-    }
 
-    increase() {
-        this.collider_selection = Math.min(this.collider_selection + 1, this.colliders.length - 1);
-    }
 
-    decrease() {
-        this.collider_selection = Math.max(this.collider_selection - 1, 0)
-    }
 
-    update_state(dt, num_bodies = 40) {
-        // update_state():  Override the base time-stepping code to say what this particular
-        // scene should do to its bodies every frame -- including applying forces.
-        // Generate moving bodies:
-        while (this.bodies.length < num_bodies)
-            this.bodies.push(new Body(this.data.random_shape(), undefined, vec3(1, 5, 1))
-                .emplace(Mat4.translation(...unsafe3(0, 0, 0).randomized(30))
-                        .times(Mat4.rotation(Math.PI, ...unsafe3(0, 0, 0).randomized(1).normalized())),
-                    unsafe3(0, 0, 0).randomized(20), Math.random()));
-        // Sometimes we delete some so they can re-generate as new ones:
-        this.bodies = this.bodies.filter(b => (Math.random() > .01) || b.linear_velocity.norm() > 1);
 
-        const collider = this.colliders[this.collider_selection];
-        // Loop through all bodies (call each "a"):
-        for (let a of this.bodies) {
-            // Cache the inverse of matrix of body "a" to save time.
-            a.inverse = Mat4.inverse(a.drawn_location);
 
-            a.linear_velocity = a.linear_velocity.minus(a.center.times(dt));
-            // Apply a small centripetal force to everything.
-            a.material = this.inactive_color;
-            // Default color: white
 
-            if (a.linear_velocity.norm() == 0)
-                continue;
-            // *** Collision process is here ***
-            // Loop through all bodies again (call each "b"):
-            for (let b of this.bodies) {
-                // Pass the two bodies and the collision shape to check_if_colliding():
-                if (!a.check_if_colliding(b, collider))
-                    continue;
-                // If we get here, we collided, so turn red and zero out the
-                // velocity so they don't inter-penetrate any further.
-                a.material = this.active_color;
-                a.linear_velocity = vec3(0, 0, 0);
-                a.angular_velocity = 0;
-            }
-        }
-    }
-
-    display(context, program_state) {
-        // display(): Draw everything else in the scene besides the moving bodies.
-        super.display(context, program_state);
-        if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
-            this.children.push(new defs.Program_State_Viewer());
-            program_state.set_camera(Mat4.translation(0, 0, -50));
-            // Locate the camera here (inverted matrix).
-        }
-        program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 1, 500);
-        program_state.lights = [new Light(vec4(.7, 1.5, 2, 0), color(1, 1, 1, 1), 100000)];
-
-        // Draw an extra bounding sphere around each drawn shape to show
-        // the physical shape that is really being collided with:
-        const {points, leeway} = this.colliders[this.collider_selection];
-        const size = vec3(1 + leeway, 1 + leeway, 1 + leeway);
-        for (let b of this.bodies)
-            points.draw(context, program_state, b.drawn_location.times(Mat4.scale(...size)), this.bright, "LINE_STRIP");
-    }
-
-    show_explanation(document_element) {
-        document_element.innerHTML += `<p>This demo detects when some flying objects collide with one another, coloring them red when they do.  For a simpler demo that shows physics-based movement without objects that hit one another, see the demo called Inertia_Demo.
-                                     </p><p>Detecting intersections between pairs of stretched out, rotated volumes can be difficult, but is made easier by being in the right coordinate space.  The collision algorithm treats every shape like an ellipsoid roughly conforming to the drawn shape, and with the same transformation matrix applied.  Here these collision volumes are drawn in translucent purple alongside the real shape so that you can see them.
-                                     </p><p>This particular collision method is extremely short to code, as you can observe in the method \"check_if_colliding\" in the class called Body below.  It has problems, though.  Making every collision body a stretched sphere is a hack and doesn't handle the nuances of the actual shape being drawn, such as a cube's corners that stick out.  Looping through a list of discrete sphere points to see if the volumes intersect is *really* a hack (there are perfectly good analytic expressions that can test if two ellipsoids intersect without discretizing them into points, although they involve solving a high order polynomial).   On the other hand, for non-convex shapes a real collision method cannot be exact either, and is usually going to have to loop through a list of discrete tetrahedrons defining the shape anyway.
-                                     </p><p>This scene extends class Simulation, which carefully manages stepping simulation time for any scenes that subclass it.  It totally decouples the whole simulation from the frame rate, following the suggestions in the blog post <a href=\"https://gafferongames.com/post/fix_your_timestep/\" target=\"blank\">\"Fix Your Timestep\"</a> by Glenn Fielder.  Buttons allow you to speed up and slow down time to show that the simulation's answers do not change.</p>`;
-    }
+   
 }

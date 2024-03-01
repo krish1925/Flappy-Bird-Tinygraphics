@@ -6,22 +6,32 @@ const {
 
 export class Tuberunner extends Scene {
     constructor() {
+
+        
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
+            background: new defs.Square(5000),
+            cube : new defs.Cube(),
+            sun : new defs.Subdivision_Sphere(4),
+            
+
             torus: new defs.Torus(15, 15),
             torus2: new defs.Torus(3,15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
             sun: new defs.Subdivision_Sphere(4),
             planet1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
-            planet2: new defs.Subdivision_Sphere(3),
-            planet3: new defs.Subdivision_Sphere(4),
+            planet2: new defs.Cube(3),
+            planet3: new defs.Cylindrical_Tube(4, 3),
             ring: new defs.Torus(50, 50),
             planet4: new defs.Subdivision_Sphere(4),
-            moon: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1)
+            moon: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
+            birdbox: new defs.Cube(3),
+            pipe: new defs.Cylindrical_Tube(1, 300),
+
             // TODO:  Fill in as many additional shape instances as needed in this key/value table.
             //        (Requirement 1)
             
@@ -29,6 +39,12 @@ export class Tuberunner extends Scene {
 
         // *** Materials
         this.materials = {
+            white: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: 0, specularity: 0, color: color(1, 1, 1, 1)}),
+            birdbox: new Material(new defs.Phong_Shader(),
+                {ambient: 0.5, diffusivity: 0.5, color: hex_color("#FF0000")}),
+            pipe: new Material(new defs.Phong_Shader(),
+                {ambient: 0.5, diffusivity: 0.5, color: hex_color("#00FF00")}),
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             test2: new Material(new Gouraud_Shader(),
@@ -37,21 +53,19 @@ export class Tuberunner extends Scene {
                 {ambient: 1, diffusivity: 1, color: hex_color("#ffffff")}),
             planet1: new Material(new defs.Phong_Shader(),
                 {ambient: 0, diffusivity: 1, color: hex_color("#808080"), specularity: 0}),
-
             planet2_gouraud: new Material(new Gouraud_Shader(),
                 {ambient: 0, diffusivity: .2, color: hex_color("#80FFFF"), specularity: 1}),
             planet2_phong: new Material(new defs.Phong_Shader(),
                 {ambient: 0, diffusivity: .2, color: hex_color("#80FFFF"), specularity: 1}),
-            
             planet3: new Material(new defs.Phong_Shader(),
                 {ambient: 0, diffusivity: 1, color: hex_color("#B08040"), specularity: 1}),
             ring: new Material(new Ring_Shader(),
                 {ambient: 1, diffusivity: 0, color: hex_color("#B08040"), specularity: 0, smoothness: 0}),
-
             planet4: new Material(new defs.Phong_Shader(),
                 {ambient: 0, color: hex_color("#1221C9"), specularity: 1}), 
             moon: new Material(new defs.Phong_Shader(),
-                {ambient: 0, diffusivity: .7, color: hex_color("#FF2BE9"), specularity: 1}),     
+                {ambient: 0, diffusivity: .7, color: hex_color("#FF2BE9"), specularity: 1}),  
+                
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -76,12 +90,22 @@ export class Tuberunner extends Scene {
         let orbit_planet3 = t/2.5;
         let orbit_planet4 = t/3.5;
 
-        //planet 1
+        // Birdbox
+        var birdbox_transform = model_transform;
+        birdbox_transform = birdbox_transform.times(Mat4.translation(0, Math.sin(t), 0));
+        this.shapes.birdbox.draw(context, program_state, birdbox_transform, this.materials.birdbox);
+
+        // Pipes
+        var pipe_transform = model_transform;
+        pipe_transform = pipe_transform.times(Mat4.translation(0, 0, -5));
+        this.shapes.pipe.draw(context, program_state, pipe_transform, this.materials.pipe);
+
+        // Planet 1
         var planet1_transform = model_transform;
         planet1_transform = planet1_transform.times(Mat4.rotation(orbit_planet1, 0, 1, 0))
                                              .times(Mat4.translation(5, 0, 0));
         this.shapes.planet1.draw(context, program_state, planet1_transform, this.materials.planet1);
-        
+
         // Planet 2
         var planet2_transform  = model_transform;
         planet2_transform = planet2_transform.times(Mat4.rotation( orbit_planet2, 0, 1, 0))
@@ -121,6 +145,7 @@ export class Tuberunner extends Scene {
     }
 
     display(context, program_state) {
+    
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
@@ -143,10 +168,12 @@ export class Tuberunner extends Scene {
         var sun_color = color(1, (1 + Math.sin(2 * Math.PI/10 * t)) / 2, (1 + Math.sin(2 * Math.PI/10 * t)) / 2, 1);
 
         program_state.lights = [new Light(light_position, sun_color, 10 ** sun_radius)];
-        this.shapes.sun.draw(context, program_state, sun_transform, this.materials.sun.override({color: sun_color}));
+        //this.shapes.sun.draw(context, program_state, sun_transform, this.materials.sun.override({color: sun_color}));
         
         //draw the planets
         this.planet_rotation(context, program_state, model_transform, t);
+
+        this.shapes.background.draw(context, program_state, Mat4.translation(0, 0, -50), this.materials.white.override({color: hex_color("#000000")}));
         if (this.attached != undefined) {
             program_state.camera_inverse = this.attached().map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1));
         }
