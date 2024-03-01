@@ -35,6 +35,9 @@ export class Bird extends Scene {
             sun: new defs.Subdivision_Sphere(4),
             square: new defs.Square(),
             text: new Text_Line( 35 ),
+            cylinder: new defs.Cylindrical_Tube(150, 300, [[0, 2], [1, 2]]),
+            capped_cylinder: new defs.Rounded_Capped_Cylinder(150, 300, [[0, 2], [1, 2]]),
+    
         };
 
         this.textures = {
@@ -178,6 +181,10 @@ export class Bird extends Scene {
     draw_box(context, program_state, model_transform, color) {
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.plastic.override({color: color}));
     }
+    raw_cylinder(context, program_state, model_transform, color) {
+        //const rotated_transform = model_transform.times(Mat4.rotation( 0, Math.PI / 2, 0,  1));
+        this.shapes.capped_cylinder.draw(context, program_state, model_transform, this.materials.plastic.override({color: color}));
+    }
 
     draw_wings(context, program_state, model_transform) {
         const left_wing = model_transform.times(Mat4.translation(-1.15, -0.4, -0.4))
@@ -227,17 +234,26 @@ export class Bird extends Scene {
     }
 
     draw_pipe(context, program_state, model_transform, pipe_len) {
-        const pipe_body_transform = model_transform.times(Mat4.scale(1, pipe_len, 1));
+        const pipe_body_transform = model_transform.times(Mat4.scale(1, pipe_len*2, 1))
+            .times(Mat4.rotation(Math.PI / 2, 1, 0, 0)); // Scale along Y-axis for length
         const green = hex_color("#528A2C");
-        const dark_green = hex_color("#142409");
+        const dark_green = hex_color("#000000");
         const pipe_top_transform = model_transform.times(Mat4.translation(0, pipe_len, 0))
-                                                  .times(Mat4.scale(1.2, 0.5, 1.2));
-        const pipe_inner_top_transform = model_transform.times(Mat4.translation(0, pipe_len, 0))
-                                                        .times(Mat4.scale(0.9, 0.501, 0.9));
-        this.draw_box(context, program_state, pipe_top_transform, green);
-        this.draw_box(context, program_state, pipe_body_transform, green);
-        this.shapes.cube.draw(context, program_state, pipe_inner_top_transform, this.materials.plastic.override({color:dark_green}));
+            .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+            .times(Mat4.scale(1.4, 1.4, 0.5)); // Scale along Z-axis for diameter
+        this.raw_cylinder(context, program_state, pipe_top_transform, green);
+        const pipe_innerr_top_transform = model_transform.times(Mat4.translation(0, pipe_len, 0))
+            .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+            .times(Mat4.scale(1, 1, 0.501)); // Scale along Z-axis for diameter
+        this.raw_cylinder(context, program_state, pipe_top_transform, dark_green);
+        this.raw_cylinder(context, program_state, pipe_innerr_top_transform, dark_green);
+        this.raw_cylinder(context, program_state, pipe_body_transform, green);
+
+        //this.shapes.cube.draw(context, program_state, pipe_inner_top_transform, this.materials.plastic.override({color:dark_green}));
     }
+
+
+
 
     /**
      * update the bird's y position
