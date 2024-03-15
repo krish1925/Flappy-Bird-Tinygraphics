@@ -30,7 +30,7 @@ export class Bird extends Scene {
         this.power_up_active = false;
         this.power_up_position = vec3(0, 0, 0);
         this.power_up_effect_duration = 30;
-        this.power_up_spawn_chance = 0.01;
+        this.power_up_spawn_chance = 0.001;
         this.power_up_spawned = false;
         this.power_up_radius = 1;
         this.invinsible = false;
@@ -41,6 +41,9 @@ export class Bird extends Scene {
             text: new Text_Line(35),
             cylinder: new defs.Cylindrical_Tube(150, 300, [[0, 2], [1, 2]]),
             capped_cylinder: new defs.Rounded_Capped_Cylinder(150, 300, [[0, 2], [1, 2]]),
+
+
+
         };
 
         this.textures = {
@@ -50,13 +53,50 @@ export class Bird extends Scene {
         };
 
         this.materials = {
-            plastic: new Material(new defs.Phong_Shader(), {ambient: .6, diffusivity: .6, specularity: 0, color: hex_color("#ffffff")}),
-            pure_color: new Material(new defs.Phong_Shader(), {ambient: 1, diffusivity: 0, specularity: 0}),
-            background: new Material(new defs.Fake_Bump_Map(1), {color: hex_color("#000000"), ambient: 1, texture: this.textures.background}),
-            background_night: new Material(new defs.Fake_Bump_Map(1), {color: hex_color("#000000"), ambient: 1, texture: this.textures.background_night}),
-            game_end: new Material(new defs.Fake_Bump_Map(1), {color: hex_color("#000000"), ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: this.textures.lose}),
-            text_image: new Material(new defs.Textured_Phong(1), {ambient: 1, diffusivity: 0, specularity: 0, texture: new Texture("assets/text.png")}),
-        };
+
+
+            plastic: new Material(
+                new defs.Phong_Shader(),
+                {
+                    ambient: .6,
+                    diffusivity: .6,
+                    specularity: 0,
+                    color: hex_color("#ffffff"),
+                }),
+            pure_color: new Material(
+                new defs.Phong_Shader(),
+                {
+                    ambient: 1,
+                    diffusivity: 0,
+                    specularity: 0,
+                }),
+            background: new Material(
+                new defs.Fake_Bump_Map(1), {
+                    color: hex_color("#000000"),
+                    ambient: 1,
+                    texture: this.textures.background,
+                }),
+            background_night: new Material(
+                new defs.Fake_Bump_Map(1), {
+                    color: hex_color("#000000"),
+                    ambient: 1,
+                    texture: this.textures.background_night,
+                }),
+            game_end: new Material(
+                new defs.Fake_Bump_Map(1), {
+                    color: hex_color("#000000"),
+                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                    texture: this.textures.lose,
+                }),
+            text_image: new Material(
+                new defs.Textured_Phong(1), {
+                    ambient: 1,
+                    diffusivity: 0,
+                    specularity: 0,
+                    texture: new Texture("assets/text.png"),
+                }),
+        }
+
 
         this.click_time = 0;
         this.game_start_time = 0;
@@ -81,6 +121,33 @@ export class Bird extends Scene {
         this.score = 0;
         this.highest_score = 0;
         this.night_theme = false;
+
+
+        this.power_up_active = false;
+        this.power_up_duration = 2; // Duration in seconds
+        this.power_up_timer = 0;
+        this.normal_acceleration = 20; // Normal gravity
+        this.reduced_acceleration = 4; // Reduced gravity when power-up is active
+        this.power_up_position = vec3(0,  Math.random() * 10 + 5, 0);
+
+
+        this.last_speed_change_time = 0; // Last time the speed changed
+        this.total_normal_speed_duration = 0; // Total time spent at normal speed
+        this.total_increased_speed_duration = 0;
+
+
+        this.power_up_visible = false;
+        //this.power_up_position = vec3(0, 5, 0);
+        this.power_up_last_activation_time = 0;
+        this.power_up_activation_interval = Math.random() * 10 + 5;
+
+        this.fastforward_active = false;
+        this.fastforward_timer = 0;
+        this.normal_speed = 5;
+
+        this.increased_speed = 6;
+        this.fastforward_position = vec3(Math.random() * 20, Math.random() * 10 + 5, 0);
+
     }
 
     spawn_power_up() {
@@ -135,7 +202,7 @@ export class Bird extends Scene {
         }
         
 
-    draw_power_up(context, program_state) {
+    draw_invincibility(context, program_state) {
         if (this.power_up_spawned) {
             const model_transform = Mat4.translation(this.power_up_position[0], this.power_up_position[1], this.power_up_position[2])
                 .times(Mat4.scale(this.power_up_radius, this.power_up_radius, this.power_up_radius));
@@ -148,6 +215,9 @@ export class Bird extends Scene {
             this.click_time = this.t;
             this.base_y = this.y;
             if (!this.game_start) {
+
+                let adjusted_time = this.total_normal_speed_duration * this.normal_speed + this.total_increased_speed_duration * this.increased_speed;
+
                 this.game_start_time = this.t + this.starting_distance / this.game_speed;
                 console.log(this.game_start_time);
             }
@@ -171,14 +241,23 @@ export class Bird extends Scene {
 
         const acceleration_controls = this.control_panel.appendChild(document.createElement("span"));
 
+
+
+
+
         this.new_line();
 
         const initial_v_y_controls = this.control_panel.appendChild(document.createElement("span"));
 
-        this.key_triggered_button("Change theme", ["b"], () => {
+
+
+        this.key_triggered_button("Change theme", ["b"], ()=> {
+
             this.night_theme = !this.night_theme;
         });
     }
+
+
 
     draw_box(context, program_state, model_transform, color) {
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.plastic.override({color: color}));
@@ -380,7 +459,13 @@ export class Bird extends Scene {
                 this.materials.background,
         );
     }
-
+    draw_power_up(context, program_state) {
+        // Only draw the power-up if it's visible
+        if (this.power_up_visible) {
+            const power_up_transform = Mat4.translation(...this.power_up_position).times(Mat4.scale(1, 1, 1));
+            this.shapes.sun.draw(context, program_state, power_up_transform, this.materials.pure_color.override({color: color(1, 1, 1, 1)}));
+        }
+    }
     draw_all_backgrounds(context, program_state, model_transform, t) {
         this.draw_background(context, program_state, model_transform, t, "f");
         this.draw_background(context, program_state, model_transform, t, "b");
@@ -392,7 +477,9 @@ export class Bird extends Scene {
         const sideview_transform = model_transform.times(Mat4.translation(-3, 25, 5))
             .times(Mat4.rotation(3 * Math.PI / 2, 0, 1, 0));
         const backview_transform = model_transform.times(Mat4.translation(-3, 25, 5))
-            .times(Matrix.of([-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]));
+
+            .times(Matrix.of([-1, 0, 0, 0],[0, 1, 0, 0],[0, 0, 1, 0],[0, 0, 0, 1]));
+
         const scoreboard_model_transform = this.sideview ? sideview_transform : backview_transform;
 
         const time_per_pipe = this.pipe_distance / this.game_speed;
@@ -403,6 +490,14 @@ export class Bird extends Scene {
         const score_string = "Score: " + this.score.toString();
         this.shapes.text.set_string(score_string, context.context);
         this.shapes.text.draw(context, program_state, scoreboard_model_transform, this.materials.text_image);
+
+    }
+    check_collision_with_power_up() {
+        // Implement collision detection logic here
+        // Example: Check distance between bird and power-up for simplicity
+        const distance = this.power_up_position.minus(vec3(0, this.y, 0)).norm();
+        return distance < 2; // Assuming a simple radius check for collision
+
     }
 
     display(context, program_state) {
@@ -435,8 +530,15 @@ export class Bird extends Scene {
             .times(Mat4.rotation(this.angle, 1, 0, 0));
 
         if (!this.game_end) {
-            this.draw_power_up(context, program_state);
+            this.draw_invincibility(context, program_state);
             this.draw_bird(context, program_state, model_transform);
+
+            // Draw power-up if it's currently visible
+            if (this.power_up_visible) {
+                this.draw_power_up(context, program_state);
+            }
+
+
             this.draw_ground(context, program_state, matrix_transform);
             this.draw_all_backgrounds(context, program_state, matrix_transform, t);
 
@@ -469,7 +571,79 @@ export class Bird extends Scene {
             const replay_string = "Replay with \"n\"";
             this.shapes.text.set_string(replay_string, context.context);
             this.shapes.text.draw(context, program_state, replay_model_transform, this.materials.text_image);
+
         }
+
+
+
+
+
+        const time_since_last_activation = program_state.animation_time / 1000 - this.power_up_last_activation_time;
+
+        if (!this.power_up_visible && time_since_last_activation > this.power_up_activation_interval) {
+            // Activate power-up
+            this.power_up_visible = true;
+            this.power_up_position = vec3(0,  Math.random() * 10 + 5, 0);
+            this.power_up_activation_interval = Math.random() * 10 + 8; // Reset activation interval
+
+        }
+
+        // Check for collision with the bird if power-up is visible
+        if (this.power_up_visible && this.check_collision_with_power_up()) {
+            // Collided with power-up
+            this.power_up_visible = false; // Hide power-up
+            this.power_up_last_activation_time = program_state.animation_time / 1000; // Record activation time
+
+            // Set initial and final values for pipe gap
+            const initialPipeGap = 25;
+            const finalPipeGap = 20;
+
+            // Set the duration for increasing the pipe gap
+            const increaseDuration = 5 * 1000; // 5 seconds
+
+            // Set the duration for decreasing the pipe gap
+            const decreaseDuration = 5 * 1000; // 5 seconds
+
+            // Variable to keep track of elapsed time
+            let elapsedTime = 0;
+
+            // Use setInterval to gradually increase the pipe gap
+            const increaseIntervalId = setInterval(() => {
+                // Update the pipe gap by 1 unit
+                this.pipe_gap += 1;
+
+                // Increment the elapsed time
+                elapsedTime += 500; // 0.5 seconds
+
+                // Check if the increase duration has elapsed
+                if (elapsedTime >= increaseDuration) {
+                    // Clear the interval for increasing
+                    clearInterval(increaseIntervalId);
+
+                    // Use setInterval to gradually decrease the pipe gap
+                    const decreaseIntervalId = setInterval(() => {
+                        // Update the pipe gap by -0.5 units
+                        this.pipe_gap -= 0.5;
+
+                        // Increment the elapsed time
+                        elapsedTime += 500; // 0.5 seconds
+
+                        // Check if the decrease duration has elapsed
+                        if (elapsedTime >= increaseDuration + decreaseDuration) {
+                            // Clear the interval for decreasing
+                            clearInterval(decreaseIntervalId);
+
+                            // Ensure the pipe gap is set to the final value
+                            this.pipe_gap = finalPipeGap;
+                        }
+                    }, 400); // Update every 0.5 seconds for decreasing
+                }
+            }, 400); // Update every 0.5 seconds for increasing
+        }
+
+
+
+
 
         const blending_factor = 0.1;
         if (!this.sideview) {
