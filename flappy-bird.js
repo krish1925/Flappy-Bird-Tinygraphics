@@ -113,6 +113,11 @@ export class Bird extends Scene {
         this.score = 0;
         this.highest_score = 0;
         this.night_theme = false;
+
+        //Power Ups
+        this.anti_gravity = false;
+        //this.anti_gravity_start_time = null;
+        this.invincibility = false;
     }
 
     make_control_panel() {
@@ -156,9 +161,15 @@ export class Bird extends Scene {
         });
         this.key_triggered_button("Anti Gravity", ["a"], ()=> {
             this.anti_gravity = true;
-            this.anti_gravity_start_time = this.t;
+            //this.anti_gravity_start_time = this.t;
             setTimeout(() => this.anti_gravity = false, 5000);
             console.log("anti gravity", this.t);
+        });
+        this.key_triggered_button("Invincibility", ["i"], ()=> {
+            this.invincibility = true;
+            //this.anti_gravity_start_time = this.t;
+            setTimeout(() => this.invincibility = false, 5000);
+            console.log("invincibility", this.t);
         });
     }
 
@@ -218,6 +229,9 @@ export class Bird extends Scene {
         this.draw_wings(context, program_state, model_transform);
         this.draw_mouth(context, program_state, model_transform);
         this.draw_eye(context, program_state, model_transform);
+        if (this.anti_gravity === true) {
+            this.draw_box(context, program_state, body_transform, yellow);
+        }
     }
 
     draw_pipe(context, program_state, model_transform, pipe_len) {
@@ -309,7 +323,14 @@ export class Bird extends Scene {
                 rec_width: 1,
                 rec_height: pipe_len * 2
             }
-            if (this.in_collision_with(bottom_pipe_position)) {
+            if (this.in_collision_with(bottom_pipe_position) && this.invincibility===true) {
+                const time_after_click = this.click_time === 0 ? 0 : t - this.click_time;
+                const dist_from_base_y = this.initial_v_y * time_after_click - 0.5 * this.acceleration * time_after_click * time_after_click;
+                this.y = dist_from_base_y + this.base_y >= 0 ? dist_from_base_y + this.base_y : 0;
+                this.base_y = 1;
+                this.y = this.initial_v_y;
+                this.click_time = 0;
+            } else if (this.in_collision_with(bottom_pipe_position)) {
                 this.game_end = true;
             }
         }
