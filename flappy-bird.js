@@ -30,7 +30,7 @@ export class Bird extends Scene {
         this.power_up_active = false;
         this.power_up_position = vec3(0, 0, 0);
         this.power_up_effect_duration = 30;
-        this.power_up_spawn_chance = 0.2;
+        this.power_up_spawn_chance = 0.01;
         this.power_up_spawned = false;
         this.power_up_radius = 1;
         this.invinsible = false;
@@ -124,16 +124,16 @@ export class Bird extends Scene {
         
     
 
-    update_power_up_effect(t) {
-        // Update the power-up effect duration
-        if (this.power_up_active) {
-            this.power_up_effect_duration -= t;
-            if (this.power_up_effect_duration <= 0) {
-                this.power_up_active = false;
-                this.invincible = false; // Reset invincibility flag
+        update_power_up_effect(delta_time) {
+            if (this.power_up_active) {
+                this.power_up_effect_duration -= delta_time;
+                if (this.power_up_effect_duration <= 0) {
+                    this.power_up_active = false;
+                    this.invincible = false; // Correct the flag if it's misspelled in your code
+                }
             }
         }
-    }
+        
 
     draw_power_up(context, program_state) {
         if (this.power_up_spawned) {
@@ -411,7 +411,11 @@ export class Bird extends Scene {
             program_state.set_camera(Mat4.translation(0, -14, -36).times(Mat4.rotation(Math.PI / 2, 0, 1, 0)));
             program_state.set_camera(this.sideview_cam_pos);
         }
+        const delta_time = program_state.animation_delta_time / 1000;
+
         this.spawn_power_up();
+        this.update_power_up_effect(delta_time);
+        
 
         const matrix_transform = Mat4.identity();
         const light_position = vec4(0, 5, 5, 1);
