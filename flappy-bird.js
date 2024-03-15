@@ -116,11 +116,11 @@ export class Bird extends Scene {
 
 
         this.power_up_active = false;
-        this.power_up_duration = 5; // Duration in seconds
+        this.power_up_duration = 2; // Duration in seconds
         this.power_up_timer = 0;
         this.normal_acceleration = 20; // Normal gravity
         this.reduced_acceleration = 4; // Reduced gravity when power-up is active
-        this.power_up_position = vec3(Math.random() * 20, Math.random() * 10 + 5, 0);
+        this.power_up_position = vec3(0,  Math.random() * 10 + 5, 0);
 
 
         this.last_speed_change_time = 0; // Last time the speed changed
@@ -129,7 +129,7 @@ export class Bird extends Scene {
 
 
         this.power_up_visible = false;
-        this.power_up_position = vec3(0, 5, 0);
+        //this.power_up_position = vec3(0, 5, 0);
         this.power_up_last_activation_time = 0;
         this.power_up_activation_interval = Math.random() * 10 + 5;
 
@@ -137,7 +137,7 @@ export class Bird extends Scene {
         this.fastforward_timer = 0;
         this.normal_speed = 5;
 
-        this.increased_speed = 10;
+        this.increased_speed = 6;
         this.fastforward_position = vec3(Math.random() * 20, Math.random() * 10 + 5, 0);
 
     }
@@ -147,6 +147,9 @@ export class Bird extends Scene {
             this.click_time = this.t;
             this.base_y = this.y;
             if (!this.game_start) {
+
+                let adjusted_time = this.total_normal_speed_duration * this.normal_speed + this.total_increased_speed_duration * this.increased_speed;
+
                 this.game_start_time = this.t + this.starting_distance / this.game_speed;
                 console.log(this.game_start_time);
             }
@@ -534,7 +537,8 @@ export class Bird extends Scene {
         if (!this.power_up_visible && time_since_last_activation > this.power_up_activation_interval) {
             // Activate power-up
             this.power_up_visible = true;
-            this.power_up_activation_interval = Math.random() * 10 + 5; // Reset activation interval
+            this.power_up_position = vec3(0,  Math.random() * 10 + 5, 0);
+            this.power_up_activation_interval = Math.random() * 10 + 8; // Reset activation interval
         }
 
         // Check for collision with the bird if power-up is visible
@@ -542,16 +546,54 @@ export class Bird extends Scene {
             // Collided with power-up
             this.power_up_visible = false; // Hide power-up
             this.power_up_last_activation_time = program_state.animation_time / 1000; // Record activation time
-            this.game_speed = this.increased_speed;
-            setTimeout(() => {
-                this.game_speed = this.normal_speed; // Reset game speed to normal
-                // Add extra time to the total duration spent at normal speed
-                this.total_increased_speed_duration += this.power_up_duration;
-            }, this.power_up_duration * 1000); // Set game speed back to normal after power-up duration
-        }
-        else{
 
+            // Set initial and final values for pipe gap
+            const initialPipeGap = 25;
+            const finalPipeGap = 20;
+
+            // Set the duration for increasing the pipe gap
+            const increaseDuration = 5 * 1000; // 5 seconds
+
+            // Set the duration for decreasing the pipe gap
+            const decreaseDuration = 5 * 1000; // 5 seconds
+
+            // Variable to keep track of elapsed time
+            let elapsedTime = 0;
+
+            // Use setInterval to gradually increase the pipe gap
+            const increaseIntervalId = setInterval(() => {
+                // Update the pipe gap by 1 unit
+                this.pipe_gap += 1;
+
+                // Increment the elapsed time
+                elapsedTime += 500; // 0.5 seconds
+
+                // Check if the increase duration has elapsed
+                if (elapsedTime >= increaseDuration) {
+                    // Clear the interval for increasing
+                    clearInterval(increaseIntervalId);
+
+                    // Use setInterval to gradually decrease the pipe gap
+                    const decreaseIntervalId = setInterval(() => {
+                        // Update the pipe gap by -0.5 units
+                        this.pipe_gap -= 0.5;
+
+                        // Increment the elapsed time
+                        elapsedTime += 500; // 0.5 seconds
+
+                        // Check if the decrease duration has elapsed
+                        if (elapsedTime >= increaseDuration + decreaseDuration) {
+                            // Clear the interval for decreasing
+                            clearInterval(decreaseIntervalId);
+
+                            // Ensure the pipe gap is set to the final value
+                            this.pipe_gap = finalPipeGap;
+                        }
+                    }, 400); // Update every 0.5 seconds for decreasing
+                }
+            }, 400); // Update every 0.5 seconds for increasing
         }
+
 
 
 
