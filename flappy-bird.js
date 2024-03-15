@@ -37,7 +37,7 @@ export class Bird extends Scene {
             text: new Text_Line( 35 ),
             cylinder: new defs.Cylindrical_Tube(150, 300, [[0, 2], [1, 2]]),
             capped_cylinder: new defs.Rounded_Capped_Cylinder(150, 300, [[0, 2], [1, 2]]),
-    
+
         };
 
         this.textures = {
@@ -66,13 +66,13 @@ export class Bird extends Scene {
             background: new Material(
                 new defs.Fake_Bump_Map(1), {
                     color: hex_color("#000000"),
-                    ambient: 1, 
+                    ambient: 1,
                     texture: this.textures.background,
                 }),
             background_night: new Material(
                 new defs.Fake_Bump_Map(1), {
                     color: hex_color("#000000"),
-                    ambient: 1, 
+                    ambient: 1,
                     texture: this.textures.background_night,
                 }),
             game_end: new Material(
@@ -83,8 +83,8 @@ export class Bird extends Scene {
                 }),
             text_image: new Material(
                 new defs.Textured_Phong(1), {
-                    ambient: 1, 
-                    diffusivity: 0, 
+                    ambient: 1,
+                    diffusivity: 0,
                     specularity: 0,
                     texture: new Texture("assets/text.png"),
                 }),
@@ -139,19 +139,26 @@ export class Bird extends Scene {
             this.angle = 0;
             this.y = 12;
         });
+
         this.new_line();
 
         const acceleration_controls = this.control_panel.appendChild(document.createElement("span"));
-        
-    
-        
+
+
+
         this.new_line();
 
         const initial_v_y_controls = this.control_panel.appendChild(document.createElement("span"));
-        
-      
+
+
         this.key_triggered_button("Change theme", ["b"], ()=> {
             this.night_theme = !this.night_theme;
+        });
+        this.key_triggered_button("Anti Gravity", ["a"], ()=> {
+            this.anti_gravity = true;
+            this.anti_gravity_start_time = this.t;
+            setTimeout(() => this.anti_gravity = false, 5000);
+            console.log("anti gravity", this.t);
         });
     }
 
@@ -168,9 +175,9 @@ export class Bird extends Scene {
 
     draw_wings(context, program_state, model_transform) {
         const left_wing = model_transform.times(Mat4.translation(-0.8, -0.4, -0.4))
-                                         .times(Mat4.scale(0.2, 0.6, 0.8));
+            .times(Mat4.scale(0.2, 0.6, 0.8));
         const right_wing = model_transform.times(Mat4.translation(0.8, -0.4, -0.4))
-                                          .times(Mat4.scale(0.2, 0.6, 0.8));
+            .times(Mat4.scale(0.2, 0.6, 0.8));
         this.shapes.sun.draw(context, program_state, left_wing, this.materials.plastic.override({color: color(1, 1, 1, 1)}));
         this.shapes.sun.draw(context, program_state, right_wing, this.materials.plastic.override({color: color(1, 1, 1, 1)}));
     }
@@ -178,9 +185,9 @@ export class Bird extends Scene {
     draw_mouth(context, program_state, model_transform) {
         const lip_color = hex_color("#FE9800");
         const upper_lip = model_transform.times(Mat4.translation(0, 0, 1))
-                                         .times(Mat4.scale(0.8, 0.2, 0.6));
+            .times(Mat4.scale(0.8, 0.2, 0.6));
         const lower_lip = model_transform.times(Mat4.translation(0, -0.3, 0.5))
-                                         .times(Mat4.scale(0.7, 0.2, 0.8));
+            .times(Mat4.scale(0.7, 0.2, 0.8));
         this.shapes.cube.draw(context, program_state, upper_lip, this.materials.plastic.override({color: lip_color}));
         this.shapes.cube.draw(context, program_state, lower_lip, this.materials.plastic.override({color: lip_color}));
     }
@@ -190,16 +197,16 @@ export class Bird extends Scene {
         const black = hex_color("#000000");
         // right eye
         const right_bg_transform = model_transform.times(Mat4.translation(-0.75, 0.35, 0.7))
-                                                  .times(Mat4.scale(0.2, 0.4, 0.4));
+            .times(Mat4.scale(0.2, 0.4, 0.4));
         const right_pupil_transform = model_transform.times(Mat4.translation(-0.8, 0.4, 0.8))
-                                                     .times(Mat4.scale(0.2, 0.20, 0.15));
+            .times(Mat4.scale(0.2, 0.20, 0.15));
         this.shapes.sun.draw(context, program_state, right_bg_transform, this.materials.plastic.override({color: white}));
         this.shapes.sun.draw(context, program_state, right_pupil_transform, this.materials.plastic.override({color: black}));
         // left eye
         const left_bg_transform = model_transform.times(Mat4.translation(0.75, 0.35, 0.7))
-                                                 .times(Mat4.scale(0.2, 0.4, 0.4));
+            .times(Mat4.scale(0.2, 0.4, 0.4));
         const left_pupil_transform = model_transform.times(Mat4.translation(0.8, 0.4, 0.8))
-                                                    .times(Mat4.scale(0.2, 0.2, 0.15));
+            .times(Mat4.scale(0.2, 0.2, 0.15));
         this.shapes.sun.draw(context, program_state, left_bg_transform, this.materials.plastic.override({color: white}));
         this.shapes.sun.draw(context, program_state, left_pupil_transform, this.materials.plastic.override({color: black}));
     }
@@ -246,10 +253,26 @@ export class Bird extends Scene {
         this.y = dist_from_base_y + this.base_y >= 0 ? dist_from_base_y + this.base_y : 0;
         this.y = time_after_click === 0 ? 12 : this.y;
 
-        if (this.y === 0) {
+        // if (this.y === 0) {
+        //     this.game_end = true;
+        // }
+
+        // if (this.anti_gravity === true && this.anti_gravity_start_time !== null && this.t - this.anti_gravity_start_time > this.anti_gravity_duration) {
+        //     console.log("TIme up");
+        //     this.anti_gravity = false; // Deactivate anti-gravity
+        // }
+
+        if (this.anti_gravity === false && this.y === 0) {
             this.game_end = true;
         }
+        if (this.anti_gravity === true && this.y === 0) {
+            this.y = dist_from_base_y + this.base_y >= 0 ? dist_from_base_y + this.base_y : 0;
+            this.base_y = 1;
+            this.y = this.initial_v_y;
+            this.click_time = 0;
     }
+
+}
 
     /**
      * get the bird's rotation angle based on the time passed since the latest click of "up".
@@ -270,7 +293,7 @@ export class Bird extends Scene {
 
             //draw top pipe
             const top_pipe_model_transform = model_transform.times(Mat4.translation(0, this.pipe_gap - (9 - pipe_len), i * this.pipe_distance))
-                                                            .times(Mat4.rotation(Math.PI, 1, 0, 0));
+                .times(Mat4.rotation(Math.PI, 1, 0, 0));
             this.draw_pipe(context, program_state, top_pipe_model_transform, 9 - pipe_len);
 
             this.check_bird_collision(top_pipe_model_transform, bottom_pipe_model_transform, pipe_len);
@@ -365,7 +388,7 @@ export class Bird extends Scene {
 
     draw_ground(context, program_state, model_transform) {
         const ground_model_transform = model_transform.times(Mat4.scale(40, 1, 60))
-                                                      .times(Mat4.translation(0, -1, 0));
+            .times(Mat4.translation(0, -1, 0));
         const green = hex_color(this.night_theme ? "53873d" : "#82C963");
         this.shapes.cube.draw(context, program_state, ground_model_transform, this.materials.pure_color.override({color: green}));
     }
@@ -377,15 +400,15 @@ export class Bird extends Scene {
         const translation_z = type === "r" ? 60: (type === "l" ? -60 : Math.sin(-t/3)*25);
 
         const background_transform = model_transform.times(Mat4.translation(translation_x, 65 - 1 / 5 * this.y, translation_z))
-                                                    .times(Mat4.rotation(rotation_angle, 0, 1, 0))
-                                                    .times(Mat4.scale(85, 85, 1));
+            .times(Mat4.rotation(rotation_angle, 0, 1, 0))
+            .times(Mat4.scale(85, 85, 1));
         this.shapes.square.draw(
             context,
             program_state,
             background_transform,
-            this.night_theme ? 
-            this.materials.background_night :
-            this.materials.background,
+            this.night_theme ?
+                this.materials.background_night :
+                this.materials.background,
         );
     }
 
@@ -398,9 +421,9 @@ export class Bird extends Scene {
 
     draw_score(context, program_state, model_transform) {
         const sideview_transform = model_transform.times(Mat4.translation(-3, 25, 5))
-                                                  .times(Mat4.rotation(3 * Math.PI / 2, 0, 1, 0));
+            .times(Mat4.rotation(3 * Math.PI / 2, 0, 1, 0));
         const backview_transform = model_transform.times(Mat4.translation(-3, 25, 5))
-                                                  .times(Matrix.of([-1, 0, 0, 0],[0, 1, 0, 0],[0, 0, 1, 0],[0, 0, 0, 1]));
+            .times(Matrix.of([-1, 0, 0, 0],[0, 1, 0, 0],[0, 0, 1, 0],[0, 0, 0, 1]));
         const scoreboard_model_transform = this.sideview ? sideview_transform : backview_transform;
 
         const time_per_pipe = this.pipe_distance / this.game_speed;
@@ -410,7 +433,7 @@ export class Bird extends Scene {
 
         const score_string = "Score: " + this.score.toString();
         this.shapes.text.set_string(score_string, context.context);
-        this.shapes.text.draw(context, program_state, scoreboard_model_transform, this.materials.text_image);        
+        this.shapes.text.draw(context, program_state, scoreboard_model_transform, this.materials.text_image);
     }
 
 
@@ -438,7 +461,7 @@ export class Bird extends Scene {
         this.update_y(t_after_click);
         this.update_angle(t_after_click);
         const model_transform = matrix_transform.times(Mat4.translation(0, this.y, 0))
-                                                .times(Mat4.rotation(this.angle, 1, 0, 0));
+            .times(Mat4.rotation(this.angle, 1, 0, 0));
 
         if(!this.game_end) {
             this.draw_bird(context, program_state, model_transform);
@@ -447,7 +470,7 @@ export class Bird extends Scene {
 
             // draw three sets of pipes, one before the bird, one after the bird, and one with the bird
             this.draw_three_sets_of_pipe(context, program_state, matrix_transform, t);
-            
+
             this.draw_score(context, program_state, matrix_transform);
         }
         else {
@@ -455,8 +478,8 @@ export class Bird extends Scene {
             program_state.set_camera(this.sideview_cam_pos);
             this.sideview = true;
             this.shapes.square.draw(context, program_state, matrix_transform.times(Mat4.translation(0, 10, 0))
-                                                                            .times(Mat4.rotation(Math.PI / 2 * 3, 0, 1, 0))
-                                                                            .times(Mat4.scale(28, 28, 1)), this.materials.game_end);
+                .times(Mat4.rotation(Math.PI / 2 * 3, 0, 1, 0))
+                .times(Mat4.scale(28, 28, 1)), this.materials.game_end);
 
             const score_model_transform = matrix_transform.times(Mat4.translation(-3, 8, -12))
                 .times(Mat4.rotation(3 * Math.PI / 2, 0, 1, 0));
@@ -465,16 +488,16 @@ export class Bird extends Scene {
             this.shapes.text.draw(context, program_state, score_model_transform, this.materials.text_image);
 
             const highscore_model_transform = matrix_transform.times(Mat4.translation(-3, 6, -12))
-                                                              .times(Mat4.rotation(3 * Math.PI / 2, 0, 1, 0));
+                .times(Mat4.rotation(3 * Math.PI / 2, 0, 1, 0));
             const highscore_string = "Highest score: " + this.highest_score.toString();
             this.shapes.text.set_string(highscore_string, context.context);
-            this.shapes.text.draw(context, program_state, highscore_model_transform, this.materials.text_image);  
-            
+            this.shapes.text.draw(context, program_state, highscore_model_transform, this.materials.text_image);
+
             const replay_model_transform = matrix_transform.times(Mat4.translation(-3, 4, -12))
-                                                           .times(Mat4.rotation(3 * Math.PI / 2, 0, 1, 0));
+                .times(Mat4.rotation(3 * Math.PI / 2, 0, 1, 0));
             const replay_string = "Replay with \"n\"";
             this.shapes.text.set_string(replay_string, context.context);
-            this.shapes.text.draw(context, program_state, replay_model_transform, this.materials.text_image);  
+            this.shapes.text.draw(context, program_state, replay_model_transform, this.materials.text_image);
         }
 
         const blending_factor = 0.1;
