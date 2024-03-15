@@ -30,7 +30,7 @@ export class Bird extends Scene {
         this.power_up_active = false;
         this.power_up_position = vec3(0, 0, 0);
         this.power_up_effect_duration = 30;
-        this.power_up_spawn_chance = 0.01;
+        this.power_up_spawn_chance = 0.001;
         this.power_up_spawned = false;
         this.power_up_radius = 1;
         this.invinsible = false;
@@ -135,7 +135,7 @@ export class Bird extends Scene {
         }
         
 
-    draw_power_up(context, program_state) {
+    draw_invincibility(context, program_state) {
         if (this.power_up_spawned) {
             const model_transform = Mat4.translation(this.power_up_position[0], this.power_up_position[1], this.power_up_position[2])
                 .times(Mat4.scale(this.power_up_radius, this.power_up_radius, this.power_up_radius));
@@ -435,7 +435,7 @@ export class Bird extends Scene {
             .times(Mat4.rotation(this.angle, 1, 0, 0));
 
         if (!this.game_end) {
-            this.draw_power_up(context, program_state);
+            this.draw_invincibility(context, program_state);
             this.draw_bird(context, program_state, model_transform);
             this.draw_ground(context, program_state, matrix_transform);
             this.draw_all_backgrounds(context, program_state, matrix_transform, t);
