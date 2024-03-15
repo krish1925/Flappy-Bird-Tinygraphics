@@ -232,6 +232,9 @@ export class Bird extends Scene {
         if (this.anti_gravity === true) {
             this.draw_box(context, program_state, body_transform, yellow);
         }
+        if (this.invincibility === true) {
+            this.draw_box(context, program_state, body_transform, yellow);
+        }
     }
 
     draw_pipe(context, program_state, model_transform, pipe_len) {
@@ -310,11 +313,11 @@ export class Bird extends Scene {
                 .times(Mat4.rotation(Math.PI, 1, 0, 0));
             this.draw_pipe(context, program_state, top_pipe_model_transform, 9 - pipe_len);
 
-            this.check_bird_collision(top_pipe_model_transform, bottom_pipe_model_transform, pipe_len);
+            this.check_bird_collision(program_state, top_pipe_model_transform, bottom_pipe_model_transform, pipe_len);
         }
     }
 
-    check_bird_collision(top_pipe, bottom_pipe, pipe_len){
+    check_bird_collision(program_state, top_pipe, bottom_pipe, pipe_len){
         //determine collision on top and bottom
         if (bottom_pipe[2][3] < 3 && bottom_pipe[2][3] > -2) {
             const bottom_pipe_position = {
@@ -324,12 +327,10 @@ export class Bird extends Scene {
                 rec_height: pipe_len * 2
             }
             if (this.in_collision_with(bottom_pipe_position) && this.invincibility===true) {
+                const t = this.t = program_state.animation_time / 1000;
                 const time_after_click = this.click_time === 0 ? 0 : t - this.click_time;
                 const dist_from_base_y = this.initial_v_y * time_after_click - 0.5 * this.acceleration * time_after_click * time_after_click;
-                this.y = dist_from_base_y + this.base_y >= 0 ? dist_from_base_y + this.base_y : 0;
-                this.base_y = 1;
-                this.y = this.initial_v_y;
-                this.click_time = 0;
+                this.y = dist_from_base_y + this.base_y >= 0 ? dist_from_base_y + this.base_y : 4;
             } else if (this.in_collision_with(bottom_pipe_position)) {
                 this.game_end = true;
             }
@@ -342,7 +343,12 @@ export class Bird extends Scene {
                 rec_width: 1,
                 rec_height: (9 - pipe_len) * 2
             }
-            if (this.in_collision_with(top_pipe_position)) {
+            if (this.in_collision_with(top_pipe_position) && this.invincibility===true) {
+                const t = this.t = program_state.animation_time / 1000;
+                const time_after_click = this.click_time === 0 ? 0 : t - this.click_time;
+                const dist_from_base_y = this.initial_v_y * time_after_click - 0.5 * this.acceleration * time_after_click * time_after_click;
+                this.y = dist_from_base_y + this.base_y >= 0 ? dist_from_base_y + this.base_y : 4;
+            } else if (this.in_collision_with(top_pipe_position)) {
                 this.game_end = true;
             }
         }
