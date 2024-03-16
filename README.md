@@ -3,9 +3,6 @@
 
  In addtion to having the original features of Flappy Bird, we implemented a brand new way to play the game -- instead of sideviewing the bird, you can view it from the back. There's also day time theme and night time theme.
 
-<img src=".github/img/gameplay.png" width="550">
-<img src=".github/img/night_theme.png" width="550">
-<img src=".github/img/back.png" width="550">
 
  ## Run
 1. Clone or download this repository.
