@@ -27,12 +27,15 @@ class Cube extends Shape {
 export class Bird extends Scene {
     constructor() {
         super();
-        this.power_up_active = false;
-        this.power_up_position = vec3(0, 0, 0);
-        this.power_up_effect_duration = 30;
-        this.power_up_spawn_chance = 0.0025;
-        this.power_up_spawned = false;
-        this.power_up_radius = 1;
+        this.invincible_active = false;
+        this.invincible_position = vec3(0, 0, 0);
+        this.invincible_duration = 30;
+        this.invincible_spawn_chance = 0.0025;
+        this.invincible_spawned = false;
+        this.invincible_radius  = 1;
+        this.yelloww = hex_color("#F9DC35");
+        this.whitee = hex_color("#FFFFFF");
+        this.blackk = hex_color("#000000");
         this.invinsible = false;
         this.shapes = {
             cube: new Cube(),
@@ -115,20 +118,15 @@ export class Bird extends Scene {
         this.elapsed_time_before_game_start = 0;
         this.game_speed = 5;
         this.sideview = true;
-        this.sideview_cam_pos = Mat4.translation(0, -14, -36).times(Mat4.rotation(Math.PI/2, 0, 1, 0));
-        this.back_cam_pos = Mat4.translation(0, -15, -26).times(Mat4.rotation(Math.PI, 0, 1, 0));
+        this.sideview_cam_pos = Mat4.translation(0, -15, -36).times(Mat4.rotation(Math.PI/2, 0, 1, 0));
+        this.back_cam_pos = Mat4.translation(-19, -16, -26).times(Mat4.rotation(Math.PI, 0, 1, 0));
         this.game_end = false;
         this.score = 0;
         this.highest_score = 0;
         this.night_theme = false;
 
-
-        this.power_up_active = false;
-        this.power_up_duration = 2; // Duration in seconds
-        this.power_up_timer = 0;
-        this.normal_acceleration = 20; // Normal gravity
-        this.reduced_acceleration = 4; // Reduced gravity when power-up is active
-        this.power_up_position2 = vec3(0,  Math.random() * 10 + 5, 0);
+        
+        this.pipegap_position  = vec3(0,  Math.random() * 10 + 5, 0);
 
 
         this.last_speed_change_time = 0; // Last time the speed changed
@@ -136,77 +134,98 @@ export class Bird extends Scene {
         this.total_increased_speed_duration = 0;
 
 
-        this.power_up_visible = false;
-        //this.power_up_position = vec3(0, 5, 0);
-        this.power_up_last_activation_time = 0;
-        this.power_up_activation_interval = Math.random() * 10 + 5;
-       // this.check
-
-        this.fastforward_active = false;
-        this.fastforward_timer = 0;
+        this.pipegap_visible = false;
+        this.pipegap_last_activation_time = 0;
+        this.pipegap_interval = Math.random() * 10 + 5;
         this.normal_speed = 5;
 
         this.increased_speed = 6;
-        this.fastforward_position = vec3(Math.random() * 20, Math.random() * 10 + 5, 0);
 
     }
 
-    spawn_power_up() {
-        if (Math.random() < this.power_up_spawn_chance && !this.power_up_spawned) {
-            this.power_up_position = vec3(0, Math.random() * 20, 0);
-            this.power_up_spawned = true;
+    invincible_spawn() {
+        if (Math.random() < this.invincible_spawn_chance && !this.invincible_spawned) {
+            this.invincible_position = vec3(0, Math.random() * 20, 0);
+            this.invincible_spawned = true;
         }
     }
 
     check_power_up_collision() {
         // Check if the bird collides with the power-up
-        if (this.power_up_spawned && Math.abs(this.y - this.power_up_position[1]) < this.power_up_radius) {
-            this.power_up_active = true;
+        if (this.invincible_spawned && Math.abs(this.y - this.invincible_position[1]) < this.invincible_radius ) {
+            this.invincible_active = true;
             this.invincible = true; // Corrected the typo here
-            this.power_up_effect_duration = 5; // Set the duration of the power-up effect (in seconds)
-            this.power_up_spawned = false;
+            this.invincible_duration = 5; // Set the duration of the power-up effect (in seconds)
+            this.invincible_spawned = false;
         }
     }
     // Enhanced collision detection with the power-up
-    check_power_up_collision_enhanced() {
+    invinible_collision() {
         // Only check for collision if the power-up is spawned
-        if (!this.power_up_spawned) return;
+        if (!this.invincible_spawned) return;
 
         const bird_position = vec3(0, this.y, 0); // Assuming the bird's x and z positions are fixed
-        const distance_to_power_up = bird_position.minus(this.power_up_position).norm();
+        const distance_to_power_up = bird_position.minus(this.invincible_position).norm();
 
         // If the distance between the bird and the power-up is less than the sum of their radii, collision occurs
-        if (distance_to_power_up < this.power_up_radius + 1 /* Assuming bird's radius is 1 */) {
-            this.activate_power_up();
+        if (distance_to_power_up < this.invincible_radius  + 1 /* Assuming bird's radius is 1 */) {
+            this.activate_invincible();
         }
     }
 
     // Function to handle power-up activation
-    activate_power_up() {
-        this.power_up_active = true;
+    activate_invincible() {
+        this.invincible_active = true;
         this.invincible = true;
-        this.power_up_effect_duration = 5; // Duration of the power-up effect in seconds
-        this.power_up_spawned = false; // Make the power-up disappear
+        this.invincible_duration = 5; // Duration of the power-up effect in seconds
+        this.invincible_spawned = false; // Make the power-up disappear
     }
 
 
 
 
-    update_power_up_effect(delta_time) {
-        if (this.power_up_active) {
-            this.power_up_effect_duration -= delta_time;
-            if (this.power_up_effect_duration <= 0) {
-                this.power_up_active = false;
-                this.invincible = false; // Correct the flag if it's misspelled in your code
+    update_invincible(delta_time) {
+        if (this.invincible_active) {
+            this.invincible_duration -= delta_time;
+            this.blackk = hex_color("#FFFFFF");
+            if ((this.t * 10) % 7 < 1) {
+                this.whitee = hex_color("#AA6600"); // Deep Orange
+                this.yelloww = hex_color("#AAAA00"); // Deep Yellow
+            } else if ((this.t * 10) % 7 < 2) {
+                this.whitee = hex_color("#AA0000"); // Deep Red
+                this.yelloww = hex_color("#AA6600"); // Deep Orange
+            } else if ((this.t * 10) % 7 < 3) {
+                this.whitee = hex_color("#AAAA00"); // Deep Yellow
+                this.yelloww = hex_color("#AA0000"); // Deep Red
+            } else if ((this.t * 10) % 7 < 4) {
+                this.whitee = hex_color("#00AA00"); // Deep Green
+                this.yelloww = hex_color("#AAAA00"); // Deep Yellow
+            } else if ((this.t * 10) % 7 < 5) {
+                this.whitee = hex_color("#0044AA"); // Deep Blue
+                this.yelloww = hex_color("#00AA00"); // Deep Green
+            } else if ((this.t * 10) % 7 < 6) {
+                this.whitee = hex_color("#6600AA"); // Deep Indigo
+                this.yelloww = hex_color("#0044AA"); // Deep Blue
+            } else {
+                this.whitee = hex_color("#8800AA"); // Deep Violet
+                this.yelloww = hex_color("#6600AA"); // Deep Indigo
+            }
+
+            if (this.invincible_duration <= 0) {
+                this.invincible_active = false;
+                this.whitee = hex_color("#FFFFFF");
+                this.yelloww = hex_color("#F9DC35");
+                this.blackk = hex_color("#000000");
+                this.invincible = false;
             }
         }
     }
 
 
     draw_invincibility(context, program_state) {
-        if (this.power_up_spawned) {
-            const model_transform = Mat4.translation(this.power_up_position[0], this.power_up_position[1], this.power_up_position[2])
-                .times(Mat4.scale(this.power_up_radius, this.power_up_radius, this.power_up_radius));
+        if (this.invincible_spawned) {
+            const model_transform = Mat4.translation(this.invincible_position[0], this.invincible_position[1], this.invincible_position[2])
+                .times(Mat4.scale(this.invincible_radius , this.invincible_radius , this.invincible_radius ));
             this.shapes.sun.draw(context, program_state, model_transform, this.materials.plastic.override({color: color(1, 1, 0, 1)}));
         }
     }
@@ -272,13 +291,13 @@ export class Bird extends Scene {
         this.shapes.capped_cylinder.draw(context, program_state, model_transform, this.materials.plastic.override({color: color}));
     }
 
-    draw_wings(context, program_state, model_transform) {
+    draw_wings(context, program_state, model_transform, whitee) {
         const left_wing = model_transform.times(Mat4.translation(-0.8, -0.4, -0.4))
             .times(Mat4.scale(0.2, 0.6, 0.8));
         const right_wing = model_transform.times(Mat4.translation(0.8, -0.4, -0.4))
             .times(Mat4.scale(0.2, 0.6, 0.8));
-        this.shapes.sun.draw(context, program_state, left_wing, this.materials.plastic.override({color: color(1, 1, 1, 1)}));
-        this.shapes.sun.draw(context, program_state, right_wing, this.materials.plastic.override({color: color(1, 1, 1, 1)}));
+        this.shapes.sun.draw(context, program_state, left_wing, this.materials.plastic.override({color: whitee}));
+        this.shapes.sun.draw(context, program_state, right_wing, this.materials.plastic.override({color: whitee}));
     }
 
     draw_mouth(context, program_state, model_transform) {
@@ -291,32 +310,29 @@ export class Bird extends Scene {
         this.shapes.cube.draw(context, program_state, lower_lip, this.materials.plastic.override({color: lip_color}));
     }
 
-    draw_eye(context, program_state, model_transform) {
-        const white = hex_color("#FFFFFF");
-        const black = hex_color("#000000");
+    draw_eye(context, program_state, model_transform, whitee, blackk) {
         // right eye
         const right_bg_transform = model_transform.times(Mat4.translation(-0.75, 0.35, 0.7))
             .times(Mat4.scale(0.2, 0.4, 0.4));
         const right_pupil_transform = model_transform.times(Mat4.translation(-0.8, 0.4, 0.8))
             .times(Mat4.scale(0.2, 0.20, 0.15));
-        this.shapes.sun.draw(context, program_state, right_bg_transform, this.materials.plastic.override({color: white}));
-        this.shapes.sun.draw(context, program_state, right_pupil_transform, this.materials.plastic.override({color: black}));
+        this.shapes.sun.draw(context, program_state, right_bg_transform, this.materials.plastic.override({color: whitee}));
+        this.shapes.sun.draw(context, program_state, right_pupil_transform, this.materials.plastic.override({color: blackk}));
         // left eye
         const left_bg_transform = model_transform.times(Mat4.translation(0.75, 0.35, 0.7))
             .times(Mat4.scale(0.2, 0.4, 0.4));
         const left_pupil_transform = model_transform.times(Mat4.translation(0.8, 0.4, 0.8))
             .times(Mat4.scale(0.2, 0.2, 0.15));
-        this.shapes.sun.draw(context, program_state, left_bg_transform, this.materials.plastic.override({color: white}));
-        this.shapes.sun.draw(context, program_state, left_pupil_transform, this.materials.plastic.override({color: black}));
+        this.shapes.sun.draw(context, program_state, left_bg_transform, this.materials.plastic.override({color: whitee}));
+        this.shapes.sun.draw(context, program_state, left_pupil_transform, this.materials.plastic.override({color: blackk}));
     }
 
-    draw_bird(context, program_state, model_transform) {
+    draw_bird(context, program_state, model_transform, yelloww) {
         const body_transform = model_transform.times(Mat4.scale(0.8, 1, 1.2));
-        const yellow = hex_color("#F9DC35");
-        this.draw_sun(context, program_state, body_transform, yellow);
-        this.draw_wings(context, program_state, model_transform);
+        this.draw_sun(context, program_state, body_transform, yelloww);
+        this.draw_wings(context, program_state, model_transform, this.whitee, this.blackk);
         this.draw_mouth(context, program_state, model_transform);
-        this.draw_eye(context, program_state, model_transform);
+        this.draw_eye(context, program_state, model_transform, this.whitee, this.blackk);
     }
 
     draw_pipe(context, program_state, model_transform, pipe_len) {
@@ -364,8 +380,11 @@ export class Bird extends Scene {
         }
     }
 
+
+
+
     check_bird_collision(top_pipe, bottom_pipe, pipe_len) {
-        if (this.power_up_active || this.invincible) return;
+        if (this.invincible_active || this.invincible) return;
         //determine collision on top and bottom
         if (bottom_pipe[2][3] < 3 && bottom_pipe[2][3] > -2) {
             const bottom_pipe_position = {
@@ -433,7 +452,6 @@ export class Bird extends Scene {
         const distX = circle_x_pos - closest_x;
         const distY = circle_y_pos - closest_y;
         const distance = Math.sqrt((distX * distX) + (distY * distY));
-        // if the distance is less than the radius, collision!
         return distance <= circle_radius;
     }
 
@@ -460,11 +478,10 @@ export class Bird extends Scene {
                 this.materials.background,
         );
     }
-    draw_power_up(context, program_state) {
+    draw_pipegap(context, program_state) {
         // Only draw the power-up if it's visible
-        if (this.power_up_visible) {
-           // this.power_up_position2 = vec3(0,  Math.random() * 20 + 5, 0);
-            const power_up_transform = Mat4.translation(...this.power_up_position2).times(Mat4.scale(1, 1, 1));
+        if (this.pipegap_visible) {
+            const power_up_transform = Mat4.translation(...this.pipegap_position ).times(Mat4.scale(1, 1, 1));
             this.shapes.sun.draw(context, program_state, power_up_transform, this.materials.plastic.override({color: color(1, 1, 1, 1)}));
         }
     }
@@ -495,9 +512,7 @@ export class Bird extends Scene {
 
     }
     check_collision_with_power_up() {
-        // Implement collision detection logic here
-        // Example: Check distance between bird and power-up for simplicity
-        const distance = this.power_up_position2.minus(vec3(0, this.y, 0)).norm();
+        const distance = this.pipegap_position.minus(vec3(0, this.y, 0)).norm();
         return distance < 2; // Assuming a simple radius check for collision
 
     }
@@ -510,9 +525,8 @@ export class Bird extends Scene {
         }
         const delta_time = program_state.animation_delta_time / 1000;
 
-        this.spawn_power_up();
-        this.update_power_up_effect(delta_time);
-
+        this.invincible_spawn();
+        this.update_invincible(delta_time);
 
         const matrix_transform = Mat4.identity();
         const light_position = vec4(0, 5, 5, 1);
@@ -524,7 +538,15 @@ export class Bird extends Scene {
 
         this.elapsed_time_before_game_start = this.game_start ? this.elapsed_time_before_game_start : t; //keep track of the time before user begin to play
 
-        this.check_power_up_collision_enhanced();
+        this.invinible_collision();
+
+        if(this.game_start === false){
+            this.pipegap_visible = false;
+            this.invincible_spawned = false;
+            this.invincible = false;
+            this.pipegap_last_activation_time = 0;
+
+        }
 
         this.update_y(t_after_click);
         this.update_angle(t_after_click);
@@ -533,18 +555,18 @@ export class Bird extends Scene {
 
         if (!this.game_end) {
             this.draw_invincibility(context, program_state);
-            this.draw_bird(context, program_state, model_transform);
+            this.draw_bird(context, program_state, model_transform, this.yelloww);
 
             // Draw power-up if it's currently visible
-            if (this.power_up_visible) {
-                this.draw_power_up(context, program_state);
+            if (this.pipegap_visible) {
+                this.draw_pipegap(context, program_state);
             }
+
 
 
             this.draw_ground(context, program_state, matrix_transform);
             this.draw_all_backgrounds(context, program_state, matrix_transform, t);
 
-            // draw three sets of pipes, one before the bird, one after the bird, and one with the bird
             this.draw_three_sets_of_pipe(context, program_state, matrix_transform, t);
 
             this.draw_score(context, program_state, matrix_transform);
@@ -580,67 +602,53 @@ export class Bird extends Scene {
 
 
 
-        const time_since_last_activation = program_state.animation_time / 1000 - this.power_up_last_activation_time;
+        const time_since_last_activation = program_state.animation_time / 1000 - this.pipegap_last_activation_time;
 
-        if (!this.power_up_visible && time_since_last_activation > this.power_up_activation_interval) {
+        if (!this.pipegap_visible && time_since_last_activation > this.pipegap_interval) {
             // Activate power-up
-            this.power_up_visible = true;
-            this.power_up_position = vec3(0,  Math.random() * 10 + 5, 0);
-            this.power_up_activation_interval = Math.random() * 10 + 8; // Reset activation interval
+            this.pipegap_visible = true;
+            this.invincible_position = vec3(0,  Math.random() * 25 + 5, 0);
+            this.pipegap_interval = Math.random() * 10 + 8; // Reset activation interval
 
         }
 
         // Check for collision with the bird if power-up is visible
-        if (this.power_up_visible && this.check_collision_with_power_up()) {
+        if (this.pipegap_visible && this.check_collision_with_power_up()) {
             // Collided with power-up
-            this.power_up_visible = false; // Hide power-up
-            this.power_up_last_activation_time = program_state.animation_time / 1000; // Record activation time
-
-            // Set initial and final values for pipe gap
+            this.pipegap_visible = false; // Hide power-up
+            this.pipegap_last_activation_time = program_state.animation_time / 1000; // Record activation time
             const initialPipeGap = 25;
             const finalPipeGap = 20;
-
-            // Set the duration for increasing the pipe gap
             const increaseDuration = 5 * 1000; // 5 seconds
-
-            // Set the duration for decreasing the pipe gap
             const decreaseDuration = 5 * 1000; // 5 seconds
 
             // Variable to keep track of elapsed time
             let elapsedTime = 0;
-
-            // Use setInterval to gradually increase the pipe gap
             const increaseIntervalId = setInterval(() => {
-                // Update the pipe gap by 1 unit
-                this.pipe_gap += 1;
-
-                // Increment the elapsed time
-                elapsedTime += 500; // 0.5 seconds
-
-                // Check if the increase duration has elapsed
+                this.yelloww  = hex_color("#0000FF");
+                this.pipe_gap += 0.01;
+                elapsedTime += 10; // 0.5 seconds
                 if (elapsedTime >= increaseDuration) {
-                    // Clear the interval for increasing
                     clearInterval(increaseIntervalId);
 
                     // Use setInterval to gradually decrease the pipe gap
                     const decreaseIntervalId = setInterval(() => {
                         // Update the pipe gap by -0.5 units
-                        this.pipe_gap -= 0.5;
+                        this.pipe_gap -= 0.01;
 
                         // Increment the elapsed time
-                        elapsedTime += 500; // 0.5 seconds
+                        elapsedTime += 10; // 0.5 seconds
 
                         // Check if the decrease duration has elapsed
-                        if (elapsedTime >= increaseDuration + decreaseDuration) {
+                        if (elapsedTime > increaseDuration + decreaseDuration) {
                             // Clear the interval for decreasing
                             clearInterval(decreaseIntervalId);
-
-                            // Ensure the pipe gap is set to the final value
+                            this.yelloww  = hex_color("#F9DC35");
                             this.pipe_gap = finalPipeGap;
                         }
-                    }, 400); // Update every 0.5 seconds for decreasing
+                    }, 10); // Update every 0.5 seconds for decreasing
                 }
-            }, 400); // Update every 0.5 seconds for increasing
+            }, 10); // Update every 0.5 seconds for increasing
         }
 
 
