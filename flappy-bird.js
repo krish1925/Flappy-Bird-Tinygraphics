@@ -30,7 +30,7 @@ export class Bird extends Scene {
         this.power_up_active = false;
         this.power_up_position = vec3(0, 0, 0);
         this.power_up_effect_duration = 30;
-        this.power_up_spawn_chance = 0.001;
+        this.power_up_spawn_chance = 0.0025;
         this.power_up_spawned = false;
         this.power_up_radius = 1;
         this.invinsible = false;
@@ -207,7 +207,7 @@ export class Bird extends Scene {
         if (this.power_up_spawned) {
             const model_transform = Mat4.translation(this.power_up_position[0], this.power_up_position[1], this.power_up_position[2])
                 .times(Mat4.scale(this.power_up_radius, this.power_up_radius, this.power_up_radius));
-            this.shapes.sun.draw(context, program_state, model_transform, this.materials.pure_color.override({color: color(1, 1, 0, 1)}));
+            this.shapes.sun.draw(context, program_state, model_transform, this.materials.plastic.override({color: color(1, 1, 0, 1)}));
         }
     }
 
@@ -463,8 +463,9 @@ export class Bird extends Scene {
     draw_power_up(context, program_state) {
         // Only draw the power-up if it's visible
         if (this.power_up_visible) {
+           // this.power_up_position2 = vec3(0,  Math.random() * 20 + 5, 0);
             const power_up_transform = Mat4.translation(...this.power_up_position2).times(Mat4.scale(1, 1, 1));
-            this.shapes.sun.draw(context, program_state, power_up_transform, this.materials.pure_color.override({color: color(1, 1, 1, 1)}));
+            this.shapes.sun.draw(context, program_state, power_up_transform, this.materials.plastic.override({color: color(1, 1, 1, 1)}));
         }
     }
     draw_all_backgrounds(context, program_state, model_transform, t) {
