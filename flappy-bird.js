@@ -28,9 +28,10 @@ export class Bird extends Scene {
     constructor() {
         super();
         this.invincible_active = false;
-        this.invincible_position = vec3(0, 0, 0);
+        this.invincible_start = 0;
+        this.invincible_position = vec3(0, Math.random() * 20 + 5, 40);
         this.invincible_duration = 30;
-        this.invincible_spawn_chance = 0.0025;
+        this.invincible_spawn_chance = 0.025;
         this.invincible_spawned = false;
         this.invincible_radius  = 1;
         this.yelloww = hex_color("#F9DC35");
@@ -40,6 +41,7 @@ export class Bird extends Scene {
         this.shapes = {
             cube: new Cube(),
             sun: new defs.Subdivision_Sphere(4),
+            torus: new defs.Torus(20, 10),
             square: new defs.Square(),
             text: new Text_Line(35),
             cylinder: new defs.Cylindrical_Tube(150, 300, [[0, 2], [1, 2]]),
@@ -125,8 +127,8 @@ export class Bird extends Scene {
         this.highest_score = 0;
         this.night_theme = false;
 
-        
-        this.pipegap_position  = vec3(0,  Math.random() * 10 + 5, 0);
+
+        this.pipegap_position  = vec3(0,  Math.random() * 10 + 5, 30);
 
 
         this.last_speed_change_time = 0; // Last time the speed changed
@@ -145,10 +147,11 @@ export class Bird extends Scene {
 
     invincible_spawn() {
         if (Math.random() < this.invincible_spawn_chance && !this.invincible_spawned) {
-            this.invincible_position = vec3(0, Math.random() * 20, 0);
+            this.invincible_position = vec3(0, Math.random() * 20, 40);
             this.invincible_spawned = true;
         }
     }
+
 
     check_power_up_collision() {
         // Check if the bird collides with the power-up
@@ -179,6 +182,7 @@ export class Bird extends Scene {
         this.invincible = true;
         this.invincible_duration = 5; // Duration of the power-up effect in seconds
         this.invincible_spawned = false; // Make the power-up disappear
+        this.invincible_start = this.t;
     }
 
 
@@ -186,8 +190,12 @@ export class Bird extends Scene {
 
     update_invincible(delta_time) {
         if (this.invincible_active) {
+
             this.invincible_duration -= delta_time;
             this.blackk = hex_color("#FFFFFF");
+
+
+
             if ((this.t * 10) % 7 < 1) {
                 this.whitee = hex_color("#AA6600"); // Deep Orange
                 this.yelloww = hex_color("#AAAA00"); // Deep Yellow
@@ -219,13 +227,21 @@ export class Bird extends Scene {
                 this.invincible = false;
             }
         }
+        if (this.invincible_position[2] < -20) {
+            this.invincible_position = vec3(0, 20 + Math.random()*5, 30);
+            this.invincible_active = false; // Deactivate invincible power-up
+        }
+        this.invincible_position[2] -= this.game_speed/60;
     }
 
 
     draw_invincibility(context, program_state) {
         if (this.invincible_spawned) {
+            // Combine translation, rotation, and scaling transformations
             const model_transform = Mat4.translation(this.invincible_position[0], this.invincible_position[1], this.invincible_position[2])
-                .times(Mat4.scale(this.invincible_radius , this.invincible_radius , this.invincible_radius ));
+                .times(Mat4.scale(this.invincible_radius, this.invincible_radius, this.invincible_radius))
+
+            // Draw the torus with the updated transformation
             this.shapes.sun.draw(context, program_state, model_transform, this.materials.plastic.override({color: color(1, 1, 0, 1)}));
         }
     }
@@ -513,7 +529,7 @@ export class Bird extends Scene {
     }
     check_collision_with_power_up() {
         const distance = this.pipegap_position.minus(vec3(0, this.y, 0)).norm();
-        return distance < 2; // Assuming a simple radius check for collision
+        return distance < 2;
 
     }
 
@@ -566,9 +582,7 @@ export class Bird extends Scene {
 
             this.draw_ground(context, program_state, matrix_transform);
             this.draw_all_backgrounds(context, program_state, matrix_transform, t);
-
             this.draw_three_sets_of_pipe(context, program_state, matrix_transform, t);
-
             this.draw_score(context, program_state, matrix_transform);
         } else {
             //draw game end scene
@@ -607,14 +621,27 @@ export class Bird extends Scene {
         if (!this.pipegap_visible && time_since_last_activation > this.pipegap_interval) {
             // Activate power-up
             this.pipegap_visible = true;
-            this.invincible_position = vec3(0,  Math.random() * 25 + 5, 0);
+            //this.invincible_position = vec3(0,    Math.random() * 25 + 5, 20);
             this.pipegap_interval = Math.random() * 10 + 8; // Reset activation interval
 
         }
+        if (this.pipegap_visible) {
+            // Calculate relative movement speed of power-up
+            const power_up_speed = this.game_speed * delta_time;
 
+            // Update power-up position based on relative speed
+            this.pipegap_position[2] -= power_up_speed; // Adjust the z-coordinate based on movement direction
+
+            // Check if power-up is out of bounds
+            if (this.pipegap_position[2] < -40) { // Assuming the background moves 40 units
+                this.pipegap_visible = false; // Hide the power-up if it's out of bounds
+                this.pipegap_position = vec3(0, Math.random() * 20 + 7, 20 + Math.random()*10);
+                //this.pipegap_interval = Math.random() * 10 + 5; // Reset activation interval
+
+            }
+        }
         // Check for collision with the bird if power-up is visible
         if (this.pipegap_visible && this.check_collision_with_power_up()) {
-            // Collided with power-up
             this.pipegap_visible = false; // Hide power-up
             this.pipegap_last_activation_time = program_state.animation_time / 1000; // Record activation time
             const initialPipeGap = 25;
@@ -622,10 +649,10 @@ export class Bird extends Scene {
             const increaseDuration = 5 * 1000; // 5 seconds
             const decreaseDuration = 5 * 1000; // 5 seconds
 
-            // Variable to keep track of elapsed time
             let elapsedTime = 0;
             const increaseIntervalId = setInterval(() => {
-                this.yelloww  = hex_color("#0000FF");
+                this.yelloww = hex_color("#0000FF");
+                this.invincible_position
                 this.pipe_gap += 0.01;
                 elapsedTime += 10; // 0.5 seconds
                 if (elapsedTime >= increaseDuration) {
@@ -633,17 +660,11 @@ export class Bird extends Scene {
 
                     // Use setInterval to gradually decrease the pipe gap
                     const decreaseIntervalId = setInterval(() => {
-                        // Update the pipe gap by -0.5 units
                         this.pipe_gap -= 0.01;
-
-                        // Increment the elapsed time
                         elapsedTime += 10; // 0.5 seconds
-
-                        // Check if the decrease duration has elapsed
                         if (elapsedTime > increaseDuration + decreaseDuration) {
-                            // Clear the interval for decreasing
                             clearInterval(decreaseIntervalId);
-                            this.yelloww  = hex_color("#F9DC35");
+                            this.yelloww = hex_color("#F9DC35");
                             this.pipe_gap = finalPipeGap;
                         }
                     }, 10); // Update every 0.5 seconds for decreasing
